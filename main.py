@@ -297,74 +297,7 @@ def hydraulic_pump_section():
         pump_data['comments'] = st.text_area("Pump Comments", key="pump_comments")
         
     return pump_data
-'''
-def create_docx_report(inspection_info, inspection_data):
-    """Create a Word document report"""
-    doc = Document()
-    
-    # Header
-    header = doc.sections[0].header
-    header_para = header.paragraphs[0]
-    header_para.text = "AMBATOVY - Condition Monitoring Rotating Equipment"
-    header_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    
-    # Title
-    title = doc.add_heading('Thickener Hydraulic Power Pack CM Check Sheet', 0)
-    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    
-    # Inspection Information
-    info_table = doc.add_table(rows=6, cols=2)
-    info_table.style = 'Table Grid'
-    
-    info_data = [
-        ("Check by:", f"{inspection_info['technician_name']} / {inspection_info['group']}"),
-        ("Date:", inspection_info['inspection_date'].strftime("%d/%m/%Y")),
-        ("Equipment Tag #:", inspection_info['equipment_tag']),
-        ("Work Order #:", inspection_info['wo_number']),
-        ("Visual Check:", "✓" if inspection_info['visual_check'] else "✗"),
-        ("Vibration Check:", "✓" if inspection_info['vibration_check'] else "✗")
-    ]
-    
-    for i, (key, value) in enumerate(info_data):
-        info_table.cell(i, 0).text = key
-        info_table.cell(i, 1).text = str(value)
-    
-    # Safety Section
-    doc.add_heading('Safety', level=1)
-    safety_table = doc.add_table(rows=5, cols=2)
-    safety_table.style = 'Table Grid'
-    
-    safety_items = [
-        ("Equipment Tags:", inspection_data.get('safety', {}).get('equipment_tags', '')),
-        ("Hand Rail/Grating:", inspection_data.get('safety', {}).get('handrail_grating', '')),
-        ("Housekeeping:", inspection_data.get('safety', {}).get('housekeeping', '')),
-        ("Terminal Box/Grounding:", inspection_data.get('safety', {}).get('terminal_grounding', '')),
-        ("Comments:", inspection_data.get('safety', {}).get('comments', ''))
-    ]
-    
-    for i, (item, status) in enumerate(safety_items):
-        safety_table.cell(i, 0).text = item
-        safety_table.cell(i, 1).text = str(status)
-    
-    # Operating Conditions
-    doc.add_heading('General Rake Operating Condition', level=1)
-    operating_table = doc.add_table(rows=3, cols=2)
-    operating_table.style = 'Table Grid'
-    
-    operating_items = [
-        ("Drive Oil Pressure (MPa):", inspection_data.get('operating', {}).get('drive_oil_pressure', '')),
-        ("Rake Torque Pressure (MPa):", inspection_data.get('operating', {}).get('rake_torque_pressure', '')),
-        ("Rake Lift Pressure (MPa):", inspection_data.get('operating', {}).get('rake_lift_pressure', ''))
-    ]
-    
-    for i, (item, value) in enumerate(operating_items):
-        operating_table.cell(i, 0).text = item
-        operating_table.cell(i, 1).text = str(value)
-    
-    # Add other sections as needed...
-    
-    return doc
-'''
+
 #-------------------------------------------Nouveau----------------------------------------------------------------------------------------------------
 
 def create_docx_report(inspection_info, inspection_data):
