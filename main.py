@@ -9,7 +9,7 @@ import base64
 
 # Page configuration
 st.set_page_config(
-    page_title="Ambatovy Inspection System",
+    page_title="Vibro-Sens Inspection System",
     page_icon="🏭",
     layout="wide"
 )
@@ -49,7 +49,7 @@ def create_logo_placeholder():
     st.markdown("""
     <div class="logo-container">
         <div style="background-color: #E8F4FD; padding: 20px; border-radius: 10px; text-align: center; border: 2px solid #3498DB;">
-            <h2 style="color: #1B4F72; margin: 0;">AMBATOVY</h2>
+            <h2 style="color: #1B4F72; margin: 0;">VIBROSens</h2>
             <p style="margin: 5px 0 0 0; color: #5D6D7E;">Condition Monitoring Rotating Equipment</p>
         </div>
     </div>
