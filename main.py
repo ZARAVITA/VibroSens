@@ -3,8 +3,9 @@ import pandas as pd
 from datetime import datetime
 import io
 from docx import Document
-from docx.shared import Inches
+from docx.shared import Pt, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.table import WD_ALIGN_VERTICAL
 import base64
 
 # Page configuration
@@ -296,7 +297,7 @@ def hydraulic_pump_section():
         pump_data['comments'] = st.text_area("Pump Comments", key="pump_comments")
         
     return pump_data
-
+'''
 def create_docx_report(inspection_info, inspection_data):
     """Create a Word document report"""
     doc = Document()
@@ -363,7 +364,230 @@ def create_docx_report(inspection_info, inspection_data):
     # Add other sections as needed...
     
     return doc
+'''
+#-------------------------------------------Nouveau----------------------------------------------------------------------------------------------------
 
+def create_docx_report(inspection_info, inspection_data):
+    """Create a comprehensive Word document report aligned with provided templates"""
+    doc = Document()
+    
+    # Set default font
+    style = doc.styles['Normal']
+    font = style.font
+    font.name = 'Arial'
+    font.size = Pt(10)
+
+    # Header with logo placeholder
+    header = doc.sections[0].header
+    header_para = header.paragraphs[0]
+    header_run = header_para.add_run()
+    # In a real implementation, you would add an actual image here
+    # header_run.add_picture("logo.png", width=Inches(1.0))
+    header_run.add_text("AMBATOVY - Condition Monitoring Rotating Equipment")
+    header_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    # Title
+    title = doc.add_heading('Thickener Hydraulic Power Pack CM Check Sheet', 0)
+    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    title.style.font.size = Pt(14)
+    title.style.font.bold = True
+
+    # Inspection Information
+    doc.add_heading('Inspection Details', level=1)
+    info_table = doc.add_table(rows=5, cols=4)
+    info_table.style = 'Table Grid'
+    info_table.autofit = False
+    
+    # Set column widths
+    for cell in info_table.columns[0].cells:
+        cell.width = Inches(1.2)
+    for cell in info_table.columns[1].cells:
+        cell.width = Inches(2.0)
+    for cell in info_table.columns[2].cells:
+        cell.width = Inches(1.2)
+    for cell in info_table.columns[3].cells:
+        cell.width = Inches(2.0)
+    
+    # Populate header row
+    hdr_cells = info_table.rows[0].cells
+    hdr_cells[0].text = "Check by:"
+    hdr_cells[1].text = f"{inspection_info['technician_name']} / {inspection_info['group']}"
+    hdr_cells[2].text = "Date:"
+    hdr_cells[3].text = inspection_info['inspection_date'].strftime("%d/%m/%Y")
+    
+    # Populate data rows
+    rows = [
+        ("Review by:", ""),
+        ("Equipment Tag #:", inspection_info['equipment_tag']),
+        ("Work Order #:", inspection_info['wo_number']),
+        ("Visual Check:", "✓" if inspection_info['visual_check'] else "✗"),
+        ("Vibration Check:", "✓" if inspection_info['vibration_check'] else "✗")
+    ]
+    
+    for i, (label, value) in enumerate(rows, start=1):
+        row_cells = info_table.rows[i].cells
+        row_cells[0].text = label
+        row_cells[1].text = value
+        if i < len(rows):
+            row_cells[2].text = ""
+            row_cells[3].text = ""
+
+    # Safety Section
+    safety = inspection_data.get('safety', {})
+    doc.add_heading('Safety', level=1)
+    safety_table = doc.add_table(rows=6, cols=2)
+    safety_table.style = 'Table Grid'
+    
+    safety_items = [
+        ("Equipment Tags:", safety.get('equipment_tags', '')),
+        ("Hand Rail/Grating:", safety.get('handrail_grating', '')),
+        ("Housekeeping:", safety.get('housekeeping', '')),
+        ("Terminal Box/Grounding:", safety.get('terminal_grounding', '')),
+        ("Coupling Guard:", safety.get('coupling_guard', '')),
+        ("Comments:", safety.get('comments', ''))
+    ]
+    
+    for i, (item, status) in enumerate(safety_items):
+        row_cells = safety_table.rows[i].cells
+        row_cells[0].text = item
+        row_cells[1].text = str(status)
+        row_cells[0].paragraphs[0].runs[0].font.bold = True
+
+    # General Rake Operating Condition
+    operating = inspection_data.get('operating', {})
+    doc.add_heading('General Rake Operating Condition', level=1)
+    doc.add_paragraph("Check rake drive system and record the following data.")
+    
+    operating_table = doc.add_table(rows=8, cols=2)
+    operating_table.style = 'Table Grid'
+    
+    operating_items = [
+        ("Drive Oil Pressure (MPa):", operating.get('drive_oil_pressure', '')),
+        ("Rake Torque Pressure (MPa):", operating.get('rake_torque_pressure', '')),
+        ("Rake Lift Pressure (MPa):", operating.get('rake_lift_pressure', '')),
+        ("Rake Lift Pressure While Lifting (MPa):", operating.get('rake_lift_pressure_lifting', '')),
+        ("Rake Lift Pressure While Lowering (MPa):", operating.get('rake_lift_pressure_lowering', '')),
+        ("Thickener Rake Position:", operating.get('rake_position', '')),
+        ("Thickener Rake Torque:", operating.get('rake_torque', '')),
+        ("Thickener Rake Speed:", operating.get('rake_speed', ''))
+    ]
+    
+    for i, (item, value) in enumerate(operating_items):
+        row_cells = operating_table.rows[i].cells
+        row_cells[0].text = item
+        row_cells[1].text = str(value)
+        row_cells[0].paragraphs[0].runs[0].font.bold = True
+
+    # Reservoir Section
+    reservoir = inspection_data.get('reservoir', {})
+    doc.add_heading('Reservoir', level=1)
+    doc.add_paragraph("Check hydraulic oil reservoir and record the following data.")
+    
+    reservoir_table = doc.add_table(rows=11, cols=4)
+    reservoir_table.style = 'Table Grid'
+    
+    # Reservoir items
+    reservoir_items = [
+        ("Check hydraulic oil reservoir for oil leaks", reservoir.get('oil_leaks', ''), "", ""),
+        ("Check hydraulic oil reservoir for condensate built up", reservoir.get('condensate', ''), "", ""),
+        ("Check hydraulic oil for contamination (dirty/milky)", reservoir.get('contamination', ''), "", ""),
+        ("Check instrument and fittings on panel for oil leaks", reservoir.get('panel_fittings', ''), "", ""),
+        ("Check reservoir breather condition", reservoir.get('breather_condition', ''), "", ""),
+        ("Delta Pressure Across Filter (kPa)", "", reservoir.get('delta_pressure', ''), ""),
+        ("Filter Color Indicator", reservoir.get('filter_color', ''), "", ""),
+        ("PRV 1 Temperature (°C)", "", "", reservoir.get('prv1_temp', '')),
+        ("PRV 2 Temperature (°C)", "", "", reservoir.get('prv2_temp', '')),
+        ("PRV 3 Temperature (°C)", "", "", reservoir.get('prv3_temp', '')),
+        ("Comments:", reservoir.get('comments', ''), "", "")
+    ]
+    
+    for i, row_data in enumerate(reservoir_items):
+        row_cells = reservoir_table.rows[i].cells
+        for j, cell_value in enumerate(row_data):
+            row_cells[j].text = str(cell_value)
+            if j == 0 and i < 5:  # Make inspection items bold
+                row_cells[j].paragraphs[0].runs[0].font.bold = True
+
+    # Hydraulic Drive Unit Section
+    drive = inspection_data.get('hydraulic_drive', {})
+    doc.add_heading('Hydraulic Drive Unit', level=1)
+    
+    drive_table = doc.add_table(rows=6, cols=5)
+    drive_table.style = 'Table Grid'
+    
+    # Header row
+    hdr_cells = drive_table.rows[0].cells
+    hdr_cells[0].text = "Inspection Item"
+    hdr_cells[1].text = "Status"
+    hdr_cells[3].text = "Measurements"
+    
+    # Drive unit items
+    drive_items = [
+        ("General condition & Noise", drive.get('general_condition', ''), "NDE Temperature (°C)", drive.get('nde_temp', '')),
+        ("Hold down bolts and Foundation base plate", drive.get('hold_down_bolts', ''), "NDE Temperature (°C)", drive.get('nde_temp2', '')),
+        ("Cooling system and Lube fitting integrity", drive.get('cooling_lube', ''), "Motor Body Temperature (°C)", drive.get('motor_body_temp', '')),
+        ("", "", "Vibration (mm/sec)", drive.get('vibration', '')),
+        ("", "", "Temperature (°C)", drive.get('temperature', '')),
+        ("Comments:", drive.get('comments', ''), "", "")
+    ]
+    
+    for i, row_data in enumerate(drive_items, start=1):
+        row_cells = drive_table.rows[i].cells
+        for j, cell_value in enumerate(row_data):
+            if j < len(row_cells):
+                row_cells[j].text = str(cell_value)
+                if i == 5:  # Comments row
+                    row_cells[0].merge(row_cells[1])
+                    row_cells[0].merge(row_cells[2])
+                    row_cells[0].merge(row_cells[3])
+                    row_cells[0].merge(row_cells[4])
+
+    # Hydraulic Pump Section
+    pump = inspection_data.get('hydraulic_pump', {})
+    doc.add_heading('Hydraulic Oil Supply Pump', level=1)
+    
+    pump_table = doc.add_table(rows=9, cols=5)
+    pump_table.style = 'Table Grid'
+    
+    # Header row
+    hdr_cells = pump_table.rows[0].cells
+    hdr_cells[0].text = "Inspection Item"
+    hdr_cells[1].text = "Status"
+    hdr_cells[3].text = "Measurements"
+    
+    # Pump items
+    pump_items = [
+        ("General condition & Noise", pump.get('general_condition', ''), "Pump Temperature (°C)", pump.get('pump_temp', '')),
+        ("Pedestal hold down bolts and Foundation base plate", pump.get('pedestal_bolts', ''), "Vibration (mm/sec)", pump.get('vibration', '')),
+        ("Pump casing & Suction/discharge line fittings", pump.get('casing_fittings', ''), "Temperature (°C)", pump.get('temperature', '')),
+        ("Check Flexible hose supply lines for chafe and cracks", pump.get('flexible_hoses', ''), "", ""),
+        ("", "", "", ""),
+        ("Comments:", pump.get('comments', ''), "", "")
+    ]
+    
+    for i, row_data in enumerate(pump_items, start=1):
+        row_cells = pump_table.rows[i].cells
+        for j, cell_value in enumerate(row_data):
+            if j < len(row_cells):
+                row_cells[j].text = str(cell_value)
+                if i == 5:  # Comments row
+                    row_cells[0].merge(row_cells[1])
+                    row_cells[0].merge(row_cells[2])
+                    row_cells[0].merge(row_cells[3])
+                    row_cells[0].merge(row_cells[4])
+
+    # Add more sections similarly for:
+    # - Motor M2
+    # - Rotary Hydraulic Drive Motor and Gearbox
+    # - Planetary Gear Reducer
+    # - Rake Lift mechanism
+    # - Automatic Grease Lubrication Unit
+    
+    return doc
+
+# ... (le reste du code reste inchangé)
+
+#----------------------------------------------Fin-----------------------------------------------------------------------------------------------------
 def export_to_csv(inspection_info, inspection_data):
     """Export inspection data to CSV"""
     csv_data = []
